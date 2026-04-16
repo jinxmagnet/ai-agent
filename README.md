@@ -1,71 +1,53 @@
 # AI Agent Projects
 
-基于 AI Agent 的实践项目集合。
+基于 AI Agent 的实践项目集合，探索 ReAct 模式与 AI 自动化应用。
 
-## 项目列表
+## 项目一览
 
-### 1. ai-agent-weather
-智能旅行助手，基于 ReAct 模式的 AI Agent，能够查询天气并推荐旅游景点。
-
-**技术栈：** Hono + React + Vite + Vercel AI SDK + aihubmix
-
-**功能：**
-- 天气查询
-- 智能景点推荐
-- 实时展示 Agent 推理过程
-
-**快速开始：**
-```bash
-cd ai-agent-weather/backend
-npm install
-npm run dev
-
-# 另起终端
-cd ai-agent-weather/frontend
-npm install
-npm run dev
-```
-
-访问 http://localhost:5173
+| 项目 | 简介 | 技术栈 |
+|------|------|--------|
+| [ai-agent-weather](./ai-agent-weather) | 智能旅行助手 - ReAct 模式 AI Agent | Hono, React, Vercel AI SDK |
+| [ai-agent-article](./ai-agent-article) | 小红书/公众号爆款文章自动生成 | Node.js, ModelScope AI, rss-parser |
 
 ---
 
-### 2. ai-agent-article
-自动化生成小红书/公众号爆款文章的 AI 工具。
+## ai-agent-weather
 
-**技术栈：** Node.js + rss-parser + ModelScope AI + sharp
+基于 ReAct 模式的智能旅行助手，自动查询天气并推荐景点，实时展示 Agent 推理过程。
 
-**功能：**
-- 自动抓取 AI 资讯
-- AI 优化内容（小红书/公众号风格）
-- 自动生成封面图
-- 支持定时任务自动执行
+**核心流程：** Thought → Action → Observation → Answer
 
-**快速开始：**
 ```bash
-cd ai-agent-article
-npm install
+# 后端 (端口 3000)
+cd ai-agent-weather/backend && npm install && npm run dev
 
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env 填入 ModelScope API Key
-
-# 单次运行
-node src/index.js
-
-# 启动定时任务
-node src/index.js --schedule
+# 前端 (端口 5173)
+cd ai-agent-weather/frontend && npm install && npm run dev
 ```
 
-**输出目录：**
+> 需要在 `backend/.env` 中配置 `AIHUBMIX_API_KEY`，访问 http://localhost:5173
+
+---
+
+## ai-agent-article
+
+自动化生成小红书/公众号爆款文章，从资讯抓取到内容优化、封面生成一站式完成。
+
+**五步流程：** 抓取资讯 → 生成模板 → AI 优化 → 生成封面 → 定时执行
+
+```bash
+cd ai-agent-article && npm install
+cp .env.example .env   # 填入 MODELSCOPE_API_KEY
+
+node src/index.js           # 单次运行
+node src/index.js --schedule # 定时任务（每天 9:00）
+```
+
+**输出：**
 ```
 output/
-├── xiaohongshu/YYYYMMDD/
-│   ├── 标题.md
-│   └── 标题_cover.png
-└── gongzhonghao/YYYYMMDD/
-    ├── 标题.md
-    └── 标题_cover.png
+├── xiaohongshu/YYYYMMDD/   # 小红书文章 + 封面
+└── gongzhonghao/YYYYMMDD/  # 公众号文章 + 封面
 ```
 
 ---

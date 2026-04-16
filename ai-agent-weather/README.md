@@ -1,115 +1,98 @@
 # AI Agent Weather - 智能旅行助手
 
-基于 ReAct 模式的 AI Agent 演示项目，能够根据用户需求查询天气并推荐旅游景点。
+基于 ReAct 模式的 AI Agent，自动查询天气并推荐旅游景点，通过 SSE 实时展示推理过程。
 
-## 功能特性
+## 核心流程
 
-- **智能旅行规划**：自动分析用户需求，分步骤完成旅行规划
-- **天气查询**：实时查询全球城市天气信息
-- **景点推荐**：根据天气状况智能推荐适合的旅游景点
-- **实时展示**：通过 SSE 实时展示 Agent 的推理过程
-- **工具调用**：模拟 ReAct 模式的 Thought → Action → Observation 循环
+```
+用户提问 → Thought（思考）→ Action（调用工具）→ Observation（观察结果）→ 最终回答
+```
 
-## 技术栈
-
-### 后端
-- Hono - 轻量级 Web 框架
-- Vercel AI SDK - AI 模型调用
-- aihubmix - AI 模型提供商
-- Zod - 数据验证
-
-### 前端
-- React 18
-- Vite
-- TypeScript
+Agent 可调用两个工具：
+- **get_weather(city)** - 查询城市实时天气（wttr.in API）
+- **search_attraction(city, weather)** - 根据天气推荐适合的景点（AI 生成）
 
 ## 快速开始
 
 ### 环境要求
 
 - Node.js 18+
-- npm 或 pnpm
 
-### 安装
+### 安装与运行
 
 ```bash
-# 安装后端依赖
+# 后端
 cd backend
-npm install
-
-# 安装前端依赖
-cd ../frontend
 npm install
 ```
 
-### 配置
-
-在 `backend` 目录创建 `.env` 文件：
-
+创建 `backend/.env`：
 ```env
 AIHUBMIX_API_KEY=your_api_key_here
 ```
 
-### 运行
-
 ```bash
-# 启动后端 (端口 3000)
-cd backend
+# 启动后端（端口 3000）
 npm run dev
 
-# 启动前端 (端口 5173)
+# 前端（另起终端）
 cd frontend
+npm install
 npm run dev
 ```
 
-访问 http://localhost:5173 即可体验。
+访问 http://localhost:5173
 
-## 使用方法
+## 技术栈
 
-1. 在输入框中描述您的旅行需求，例如：
-   - "请帮我查询北京今天的天气，并推荐适合的景点"
-   - "上海天气怎么样？适合室内还是室外活动？"
+| 层级 | 技术 |
+|------|------|
+| 后端框架 | Hono + @hono/node-server |
+| AI SDK | Vercel AI SDK + aihubmix |
+| 前端 | React 18 + TypeScript + Vite |
+| 数据验证 | Zod |
+| 通信方式 | SSE (Server-Sent Events) |
 
-2. 点击发送按钮，观察 Agent 的推理过程
+## 使用示例
 
-3. Agent 会自动：
-   - 分析用户需求
-   - 调用天气查询工具
-   - 根据天气情况推荐景点
-   - 给出最终建议
+输入任意旅行相关问题，Agent 会自动推理并执行：
 
-## API 接口
+- "请帮我查询北京今天的天气，并推荐适合的景点"
+- "上海天气怎么样？适合室内还是室外活动？"
+- "帮我规划一个适合今天天气的户外活动"
+
+## API
 
 ### POST /api/chat
 
-发送聊天消息，启动 Agent 推理流程。
-
 **请求：**
 ```json
-{
-  "message": "请帮我查询北京的天气"
-}
+{ "message": "请帮我查询北京的天气" }
 ```
 
-**响应：** SSE 流式返回，包含以下事件类型：
-- `thought`: Agent 思考过程
-- `tool_call`: 工具调用
-- `observation`: 工具执行结果
-- `final_answer`: 最终答案
-- `error`: 错误信息
+**响应：** SSE 流式返回
+
+| 事件类型 | 说明 |
+|----------|------|
+| `thought` | Agent 思考过程 |
+| `tool_call` | 工具调用（含工具名和参数） |
+| `observation` | 工具执行结果 |
+| `final_answer` | 最终答案 |
+| `error` | 错误信息 |
 
 ## 项目结构
 
 ```
 ai-agent-weather/
 ├── backend/
-│   └── src/
-│       └── index.ts      # 后端入口
+│   ├── src/index.ts        # Agent 核心逻辑 + API
+│   └── package.json
 └── frontend/
-    └── src/
-        ├── App.tsx       # 主应用组件
-        ├── App.css       # 样式
-        └── main.tsx      # 入口文件
+    ├── src/
+    │   ├── App.tsx         # 主界面 + SSE 解析
+    │   ├── App.css         # 样式
+    │   └── main.tsx
+    └── package.json
 ```
 
 ## License
