@@ -7,20 +7,25 @@ ai-agent-article 是一个自动化生成小红书/公众号爆款文章的工�
 ## 技术栈
 
 - **运行时**: Node.js
-- **依赖**: rss-parser, node-cron
+- **依赖**: rss-parser, node-cron, sharp, dotenv
 - **HTTP 请求**: Node.js 原生 fetch
-- **AI 服务**: AIHubMix（内容优化：coding-glm-5.1-free，封面图：gemini-3.1-flash-image-preview-free）
+- **AI 服务**: ModelScope (ZhipuAI/GLM-5.1)
 
-## 项目结构（规划）
+## 项目结构
 
 ```
 ai-agent-article/
 ├── src/
-│   └── index.js            # 主入口（5步流程）
+│   ├── index.js            # 主入口（5步流程）
+│   ├── demo.js             # ModelScope API 测试
+│   └── demoCover.js        # 封面图生成测试
+├── config/
+│   └── sources.js          # RSS / API 数据源配置
 ├── output/
 │   ├── xiaohongshu/        # 小红书格式文章
+│   │   └── YYYYMMDD/       # 按日期分类
 │   └── gongzhonghao/       # 公众号格式文章
-├── config/                 # 配置文件（RSS 源、API Key 等）
+│       └── YYYYMMDD/       # 按日期分类
 ├── package.json
 ├── AGENTS.md
 └── README.md
