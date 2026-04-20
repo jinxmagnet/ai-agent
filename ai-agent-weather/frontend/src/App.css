@@ -297,3 +297,20 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.btn-stop {
+  padding: 8px 20px;
+  border: 1px solid #ff3a3a;
+  border-radius: var(--radius-sm);
+  background: #2a1a1a;
+  color: #ff6a6a;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-stop:hover {
+  background: #ff3a3a;
+  color: white;
+}

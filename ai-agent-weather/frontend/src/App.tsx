@@ -1,5 +1,5 @@
 interface StepEvent {
-  type: 'thought' | 'action' | 'tool_call' | 'observation' | 'final_answer' | 'error';
+  type: 'thought' | 'tool_call' | 'observation' | 'final_answer' | 'error';
   step: number;
   content: string;
   tool?: string;
@@ -25,72 +25,9 @@ function App() {
   const [error, setError] = useState('');
   const abortRef = useRef<AbortController | null>(null);
   const stepsMapRef = useRef<Map<number, AgentStep>>(new Map());
+  const loadingRef = useRef(false);
 
-  const sendMessage = useCallback(async (messageText: string) => {
-    if (!messageText.trim() || loading) return;
-
-    setLoading(true);
-    setError('');
-    setFinalAnswer('');
-    setAgentSteps([]);
-    stepsMapRef.current.clear();
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageText }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
-      }
-
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split('\n\n');
-        buffer = parts.pop() || '';
-
-        for (const part of parts) {
-          const lines = part.split('\n');
-          let dataLine = '';
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              dataLine = line.slice(5).trim();
-            }
-          }
-          if (!dataLine) continue;
-
-          try {
-            const event: StepEvent = JSON.parse(dataLine);
-            handleEvent(event);
-          } catch {
-            // skip unparseable events
-          }
-        }
-      }
-    } catch (e) {
-      if ((e as Error).name !== 'AbortError') {
-        setError(`请求失败: ${(e as Error).message}`);
-      }
-    } finally {
-      setLoading(false);
-      abortRef.current = null;
-    }
-  }, [loading]);
-
-  const handleEvent = (event: StepEvent) => {
+  const handleEvent = useCallback((event: StepEvent) => {
     const steps = stepsMapRef.current;
 
     switch (event.type) {
@@ -125,11 +62,88 @@ function App() {
     setAgentSteps(
       Array.from(steps.values()).sort((a, b) => a.step - b.step)
     );
-  };
+  }, []);
+
+  const sendMessage = useCallback(async (messageText: string) => {
+    if (!messageText.trim() || loadingRef.current) return;
+
+    loadingRef.current = true;
+    setLoading(true);
+    setError('');
+    setFinalAnswer('');
+    setAgentSteps([]);
+    stepsMapRef.current.clear();
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: messageText }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => '');
+        throw new Error(`HTTP ${response.status}${errBody ? ': ' + errBody : ''}`);
+      }
+
+      if (!response.body) {
+        throw new Error('浏览器不支持流式读取');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() || '';
+
+        for (const part of parts) {
+          const lines = part.split('\n');
+          let dataLine = '';
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              dataLine = line.slice(5).trim();
+            }
+          }
+          if (!dataLine) continue;
+
+          try {
+            const event: StepEvent = JSON.parse(dataLine);
+            handleEvent(event);
+          } catch {
+            // skip unparseable events
+          }
+        }
+      }
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') {
+        setError(`请求失败: ${(e as Error).message}`);
+      }
+    } finally {
+      loadingRef.current = false;
+      setLoading(false);
+      abortRef.current = null;
+    }
+  }, [handleEvent]);
 
   const handleSend = () => {
-    sendMessage(input || DEFAULT_MESSAGE);
+    const text = input.trim();
+    if (!text) return;
+    sendMessage(text);
     setInput('');
+  };
+
+  const handleStop = () => {
+    abortRef.current?.abort();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -238,20 +252,24 @@ function App() {
         <div className="input-actions">
           <button
             className="btn-secondary"
-            onClick={() => {
-              setInput(DEFAULT_MESSAGE);
-            }}
+            onClick={() => setInput(DEFAULT_MESSAGE)}
             disabled={loading}
           >
             使用示例
           </button>
-          <button
-            className="btn-primary"
-            onClick={handleSend}
-            disabled={loading}
-          >
-            {loading ? '处理中...' : '发送'}
-          </button>
+          {loading ? (
+            <button className="btn-stop" onClick={handleStop}>
+              停止
+            </button>
+          ) : (
+            <button
+              className="btn-primary"
+              onClick={handleSend}
+              disabled={!input.trim()}
+            >
+              发送
+            </button>
+          )}
         </div>
       </div>
     </div>
